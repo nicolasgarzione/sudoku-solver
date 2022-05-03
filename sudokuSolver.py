@@ -1,34 +1,11 @@
-'''from ctypes import cdll
-lib = cdll.LoadLibrary('./solve.o')
-
-class Solve(object):
-    def __init__(self):
-        self.obj = lib.Solve_new()
-
-    def sudokuSolver(self):
-        lib.Solve_sudokuSolver(self.obj)
-
-grid =  [[0,4,3,0,8,0,2,5,0],
-         [6,0,0,0,0,0,0,0,0],
-         [0,0,0,0,0,1,0,9,4],
-         [9,0,0,0,0,4,0,7,0],
-         [0,0,0,6,0,8,0,0,0],
-         [0,1,0,2,0,0,0,0,3],
-         [8,2,0,5,0,0,0,0,0],
-         [0,0,0,0,0,0,0,0,5],
-         [0,3,4,0,9,0,7,1,0]]
-
-s = Solve()
-s.grid = grid
-solved = s.sudokuSolver(s.grid)'''
-
 import numpy as np
 import cv2 as cv
 import matplotlib
-
-
+import tkinter as tk
 
 def main():
+    popupmsg('Hold a Sudoku puzzle up to the camera', 'Instructions')
+
     cap = cv.VideoCapture(0)
 
     while True:
@@ -36,11 +13,19 @@ def main():
 
         grayscale = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
 
+        #cv.imshow('Grayscale', grayscale)
+
         blur = cv.GaussianBlur(grayscale, (1,1), cv.BORDER_DEFAULT)
+
+        #cv.imshow('Blur', blur)
 
         threshold = cv.adaptiveThreshold(blur,255,cv.ADAPTIVE_THRESH_GAUSSIAN_C,cv.THRESH_BINARY_INV,199,5)
 
+        #cv.imshow('Threshold', threshold)
+
         contours, hierarchy = cv.findContours(threshold, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+
+        #cv.drawContours(frame, contours, -1, (0, 255, 0), 3)
 
         #print("Number of Contours found = " + str(len(contours)))
 
@@ -65,12 +50,16 @@ def main():
         if len(approxShape) == 4:
             cv.drawContours(frame, [approxShape], 0, (0,255,0), 3)
             n_shape = findCorners(approxShape)
+            #cv.circle(frame, (approxShape[0,0,0],approxShape[0,0,1]), 3, (0,255,0), 3)
+            #cv.circle(frame, (approxShape[1,0,0],approxShape[1,0,1]), 3, (0,255,0), 3)
+            #cv.circle(frame, (approxShape[2,0,0],approxShape[2,0,1]), 3, (0,255,0), 3)
+            #cv.circle(frame, (approxShape[3,0,0],approxShape[3,0,1]), 3, (0,255,0), 3)
             n_size = 900
             n_window = np.array([[0,n_size],[n_size,n_size],[n_size,0],[0,0]],np.float32)
             M = cv.getPerspectiveTransform(n_shape, n_window)
             out = cv.warpPerspective(grayscale, M, (n_size, n_size))
-            sudoku_unsolved = findNumbers(out)
-            #cv.imshow('Adjusted Image', out)
+            #sudoku_unsolved = findNumbers(out)
+            cv.imshow('Adjusted Image', out)
 
         cv.imshow('Image', frame)
 
@@ -80,6 +69,14 @@ def main():
     cap.release()
     cv.destroyAllWindows()
 
+def popupmsg(msg, title):
+    root = tk.Tk()
+    root.title(title)
+    label = tk.Label(root, text=msg)
+    label.pack(side="top", fill="x", pady=10)
+    B1 = tk.Button(root, text="Ok", command = root.destroy)
+    B1.pack()
+    root.mainloop()
 
 def findCorners(m):
     x = [m[0,0,0], m[1,0,0], m[2,0,0], m[3,0,0]]
